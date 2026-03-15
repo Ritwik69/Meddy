@@ -1,0 +1,349 @@
+// Meddy – Healthcare Platform Schema
+// Prisma 7 | PostgreSQL
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  PATIENT
+  DOCTOR
+  CLINIC_ADMIN
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum AppointmentType {
+  IN_PERSON
+  ONLINE
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+}
+
+// ─────────────────────────────────────────────
+// Auth Models (NextAuth v4 compatible)
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  phone         String?   @unique
+  password      String?
+  role          Role      @default(PATIENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  patient  Patient?
+  doctor   Doctor?
+
+  @@index([email])
+  @@index([phone])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────────
+// Domain Models
+// ─────────────────────────────────────────────
+
+model Patient {
+  id               String     @id @default(cuid())
+  userId           String     @unique
+  dateOfBirth      DateTime?
+  gender           Gender?
+  bloodGroup       BloodGroup?
+  address          String?
+  city             String?
+  state            String?
+  pincode          String?    @db.VarChar(6)
+  emergencyContact String?    @db.VarChar(10)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments  Appointment[]
+  healthRecords HealthRecord[]
+  prescriptions Prescription[]
+
+  @@index([userId])
+  @@index([city, state])
+  @@map("patients")
+}
+
+model Doctor {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  registrationNo  String   @unique
+  specialization  String
+  qualifications  String[]
+  experienceYears Int      @default(0)
+  consultationFee Decimal  @db.Decimal(10, 2)
+  bio             String?  @db.Text
+  languages       String[]
+  city            String?
+  state           String?
+  isVerified      Boolean  @default(false)
+  isAvailable     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinics       DoctorClinic[]
+  appointments  Appointment[]
+  healthRecords HealthRecord[]
+  prescriptions Prescription[]
+  roomBookings  RoomBooking[]
+
+  @@index([userId])
+  @@index([specialization])
+  @@index([city, state])
+  @@index([isVerified, isAvailable])
+  @@map("doctors")
+}
+
+model Clinic {
+  id             String   @id @default(cuid())
+  adminUserId    String?  @unique // CLINIC_ADMIN user who manages this clinic
+  name           String
+  registrationNo String   @unique
+  type           String   // "hospital" | "clinic" | "diagnostic_center" | "pharmacy"
+  address        String
+  city           String
+  state          String
+  pincode        String   @db.VarChar(6)
+  phone          String
+  email          String?
+  website        String?
+  isVerified     Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  doctors      DoctorClinic[]
+  appointments Appointment[]
+  rooms        Room[]
+
+  @@index([city, state])
+  @@index([type])
+  @@index([isVerified, isActive])
+  @@map("clinics")
+}
+
+// Join table: Doctor ↔ Clinic
+model DoctorClinic {
+  id        String   @id @default(cuid())
+  doctorId  String
+  clinicId  String
+  // JSON: { mon: [{start:"09:00", end:"13:00"}], tue: [...], ... }
+  schedule  Json?
+  createdAt DateTime @default(now())
+
+  doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, clinicId])
+  @@index([doctorId])
+  @@index([clinicId])
+  @@map("doctor_clinics")
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  patientId   String
+  doctorId    String
+  clinicId    String?
+  scheduledAt DateTime
+  duration    Int               @default(30) // minutes
+  type        AppointmentType   @default(IN_PERSON)
+  status      AppointmentStatus @default(PENDING)
+  reason      String?
+  notes       String?           @db.Text
+  meetingLink String?           // for ONLINE appointments
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor       Doctor        @relation(fields: [doctorId], references: [id])
+  clinic       Clinic?       @relation(fields: [clinicId], references: [id])
+  prescription Prescription?
+  healthRecord HealthRecord?
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([clinicId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@index([doctorId, scheduledAt]) // for availability checks
+  @@map("appointments")
+}
+
+model HealthRecord {
+  id            String   @id @default(cuid())
+  patientId     String
+  doctorId      String?  // null for patient self-uploads
+  appointmentId String?  @unique
+  diagnosis     String
+  symptoms      String[]
+  vitals        Json?    // { bp, pulse, temp, weight, height, spo2 }
+  notes         String?  @db.Text
+  attachments   String[] // file URLs (reports, scans)
+  recordedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor?      @relation(fields: [doctorId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([patientId, recordedAt])
+  @@map("health_records")
+}
+
+model Prescription {
+  id            String    @id @default(cuid())
+  patientId     String
+  doctorId      String
+  appointmentId String?   @unique
+  diagnosis     String?   @db.Text
+  // JSON array: [{ name, dosage, frequency, duration, instructions }]
+  medications   Json
+  notes         String?   @db.Text
+  validUntil    DateTime?
+  issuedAt      DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor       @relation(fields: [doctorId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([patientId, issuedAt])
+  @@map("prescriptions")
+}
+
+// ─────────────────────────────────────────────
+// Room Marketplace
+// ─────────────────────────────────────────────
+
+model Room {
+  id            String   @id @default(cuid())
+  clinicId      String
+  name          String
+  description   String?  @db.Text
+  equipment     String[] // e.g. ["ECG", "Ultrasound", "X-Ray"]
+  pricePerHour  Decimal  @db.Decimal(10, 2)
+  availableDays String[] // e.g. ["Mon", "Tue", "Wed"]
+  startTime     String   // "09:00"
+  endTime       String   // "18:00"
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  clinic   Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  bookings RoomBooking[]
+
+  @@index([clinicId])
+  @@index([isActive])
+  @@map("rooms")
+}
+
+model RoomBooking {
+  id        String   @id @default(cuid())
+  roomId    String
+  doctorId  String
+  date      DateTime @db.Date
+  startTime String   // "09:00"
+  endTime   String   // "10:00"
+  status    String   @default("CONFIRMED") // CONFIRMED | CANCELLED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  doctor Doctor @relation(fields: [doctorId], references: [id])
+
+  @@index([roomId])
+  @@index([doctorId])
+  @@index([date])
+  @@map("room_bookings")
+}
