@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   const record = await prisma.healthRecord.create({
     data: {
       patientId: patient.id,
-      doctorId: null,
+      doctorId: undefined,
       diagnosis: title,
       symptoms: [category],
       attachments: [fileUrl],

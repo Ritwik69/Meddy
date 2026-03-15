@@ -42,13 +42,13 @@ export const step1Schema = z.object({
     .string()
     .min(3, "Enter your medical registration number")
     .max(50, "Registration number too long"),
-  experienceYears: z.coerce
-    .number({ error: "Enter years of experience" })
+  experienceYears: z
+    .number()
     .int()
     .min(0, "Cannot be negative")
     .max(70, "Please enter a valid value"),
-  consultationFee: z.coerce
-    .number({ error: "Enter consultation fee" })
+  consultationFee: z
+    .number()
     .positive("Fee must be greater than 0")
     .max(100_000, "Fee seems too high"),
   bio: z

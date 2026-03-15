@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(cd C:/Users/Rajeev/meddy && npx prisma init --datasource-provider postgresql 2>&1)",
+      "Bash(cd C:/Users/Rajeev/meddy && npx prisma validate 2>&1)",
+      "Bash(cd C:/Users/Rajeev/meddy && npx prisma migrate dev --name init 2>&1)",
+      "Bash(cd C:/Users/Rajeev/meddy && npx prisma generate 2>&1)",
+      "Bash(cd C:/Users/Rajeev/meddy && npx prisma migrate dev --name add-user-password 2>&1)",
+      "Bash(cd C:/Users/Rajeev/meddy && npx tsc --noEmit 2>&1)",
+      "Bash(cd C:/Users/Rajeev/meddy && npm run build 2>&1)",
+      "Bash(openssl rand:*)",
+      "Bash(curl -s -o /dev/null -w \"login: %{http_code}\\\\n\" http://localhost:3000/login && curl -s -o /dev/null -w \"signup: %{http_code}\\\\n\" http://localhost:3000/signup && curl -s -o /dev/null -w \"dashboard \\(unauth\\): %{http_code}\\\\n\" http://localhost:3000/dashboard)",
+      "Bash(curl -s -I http://localhost:3000/dashboard 2>&1 | head -5)",
+      "Bash(curl -s http://localhost:3000/api/auth/providers 2>&1)",
+      "Bash(netstat -ano | grep \":300\" | grep LISTEN 2>&1)",
+      "Bash(curl -s http://localhost:3001/api/auth/providers 2>&1)",
+      "Bash(wmic process:*)",
+      "Bash(powershell -Command \"Get-Process -Id 25560, 27036 | Select-Object Id, ProcessName, MainWindowTitle\" 2>&1)",
+      "Bash(powershell -Command \"Get-WmiObject Win32_Process -Filter 'ProcessId=25560' | Select-Object CommandLine\" 2>&1)",
+      "Bash(powershell -Command \"Get-WmiObject Win32_Process -Filter 'ProcessId=27036' | Select-Object CommandLine\" 2>&1)",
+      "Bash(powershell -Command \"Get-WmiObject Win32_Process -Filter 'ProcessId=17384' | Select-Object CommandLine\" 2>&1)",
+      "Bash(curl -s http://127.0.0.1:3000/api/auth/providers 2>&1)",
+      "Bash(test:*)",
+      "Bash(ls:*)",
+      "Bash(del:*)",
+      "Bash(cd:*)",
+      "Bash(npx prisma:*)",
+      "Skill(claude-api)",
+      "Bash(npm list:*)",
+      "Bash(mkdir:*)",
+      "Bash(where gh:*)",
+      "Bash(powershell -Command \"Get-Command gh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\" 2>&1)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

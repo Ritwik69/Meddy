@@ -237,7 +237,7 @@ export default function AnalyticsDashboard({
                   width={52}
                 />
                 <Tooltip
-                  formatter={(v: number) => [inr(v), "Revenue"]}
+                  formatter={(v: unknown) => [inr(v as number), "Revenue"]}
                   contentStyle={tooltipStyle}
                   cursor={{ fill: "#f0f9ff" }}
                 />
@@ -282,7 +282,7 @@ export default function AnalyticsDashboard({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(v: number, name: string) => [v, name]}
+                    formatter={(v: unknown, name: unknown) => [v as number, name as string]}
                     contentStyle={tooltipStyle}
                   />
                   <Legend
@@ -330,7 +330,7 @@ export default function AnalyticsDashboard({
                   width={32}
                 />
                 <Tooltip
-                  formatter={(v: number) => [v, "Appointments"]}
+                  formatter={(v: unknown) => [v as number, "Appointments"]}
                   contentStyle={tooltipStyle}
                   cursor={{ fill: "#f5f3ff" }}
                 />

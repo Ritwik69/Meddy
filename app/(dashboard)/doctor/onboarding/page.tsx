@@ -184,7 +184,7 @@ export default function DoctorOnboardingPage() {
         )}
 
         {/* ── Stepper ── */}
-        {step < 3 && <Stepper step={step} />}
+        {step < 3 && <Stepper step={step as 1 | 2} />}
 
         {/* ── Step content ── */}
         <div className="mt-8">
@@ -330,7 +330,7 @@ function Step1Form({
             error={errors.experienceYears?.message}
           >
             <input
-              {...register("experienceYears")}
+              {...register("experienceYears", { valueAsNumber: true })}
               type="number"
               min={0}
               max={70}
@@ -348,7 +348,7 @@ function Step1Form({
                 ₹
               </span>
               <input
-                {...register("consultationFee")}
+                {...register("consultationFee", { valueAsNumber: true })}
                 type="number"
                 min={0}
                 placeholder="500"
